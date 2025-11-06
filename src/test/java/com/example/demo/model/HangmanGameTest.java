@@ -9,17 +9,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("HangmanGame Tests")
 class HangmanGameTest {
 
-    private HangmanGame game;
+    private HangmanGameModel game;
 
     @BeforeEach
     void setUp() {
-        game = new HangmanGame();
+        game = new HangmanGameModel();
     }
 
     @Test
     @DisplayName("Game initializes with a word of at least 12 characters")
     void testWordLength() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         assertNotNull(word, "Word should not be null");
         assertTrue(word.length() >= 12, 
             "Word should be at least 12 characters long, but was: " + word.length());
@@ -28,7 +28,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Game starts with one letter already revealed as a hint")
     void testInitialHintLetter() {
-        String displayWord = game.getDisplayWord();
+        String displayWord = game.getCurrentWordState();
         long revealedLetters = displayWord.chars()
             .filter(ch -> ch != '_' && ch != ' ')
             .count();
@@ -42,7 +42,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Correct guess reveals letters in the word")
     void testCorrectGuess() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         
         // Find a letter that exists in the word but hasn't been guessed
         char letterToGuess = '_';
@@ -54,9 +54,9 @@ class HangmanGameTest {
         }
         
         if (letterToGuess != '_') {
-            String displayBefore = game.getDisplayWord();
-            boolean result = game.guessLetter(letterToGuess);
-            String displayAfter = game.getDisplayWord();
+            String displayBefore = game.getCurrentWordState();
+            boolean result = game.guesLetter(letterToGuess);
+            String displayAfter = game.getCurrentWordState();
             
             assertTrue(result, "Guessing a correct letter should return true");
             assertNotEquals(displayBefore, displayAfter, 
@@ -69,7 +69,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Wrong guess increases wrong guess count")
     void testWrongGuess() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         int wrongGuessesBefore = game.getWrongGuesses();
         
         // Find a letter that doesn't exist in the word
@@ -81,7 +81,7 @@ class HangmanGameTest {
             }
         }
         
-        boolean result = game.guessLetter(wrongLetter);
+        boolean result = game.guesLetter(wrongLetter);
         
         assertFalse(result, "Guessing a wrong letter should return false");
         assertEquals(wrongGuessesBefore + 1, game.getWrongGuesses(), 
@@ -93,11 +93,11 @@ class HangmanGameTest {
     @Test
     @DisplayName("Guessing the same letter twice returns false")
     void testDuplicateGuess() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         char letter = word.charAt(0);
         
-        game.guessLetter(letter);
-        boolean secondGuess = game.guessLetter(letter);
+        game.guesLetter(letter);
+        boolean secondGuess = game.guesLetter(letter);
         
         assertFalse(secondGuess, 
             "Guessing the same letter twice should return false");
@@ -106,12 +106,12 @@ class HangmanGameTest {
     @Test
     @DisplayName("Game is won when all letters are guessed")
     void testGameWon() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         
         // Guess all unique letters in the word
         for (char c : word.toCharArray()) {
             if (!game.isLetterGuessed(c)) {
-                game.guessLetter(c);
+                game.guesLetter(c);
             }
         }
         
@@ -123,13 +123,13 @@ class HangmanGameTest {
     @Test
     @DisplayName("Game is lost after 6 wrong guesses")
     void testGameLost() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         
         // Make 6 wrong guesses
         int wrongGuesses = 0;
         for (char c = 'A'; c <= 'Z' && wrongGuesses < 6; c++) {
             if (word.indexOf(c) == -1) {
-                game.guessLetter(c);
+                game.guesLetter(c);
                 wrongGuesses++;
             }
         }
@@ -144,7 +144,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Remaining guesses decreases with wrong guesses")
     void testRemainingGuesses() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         int initialRemaining = game.getRemainingGuesses();
         
         assertEquals(6, initialRemaining, "Should start with 6 remaining guesses");
@@ -158,7 +158,7 @@ class HangmanGameTest {
             }
         }
         
-        game.guessLetter(wrongLetter);
+        game.guesLetter(wrongLetter);
         assertEquals(5, game.getRemainingGuesses(), 
             "Remaining guesses should decrease after wrong guess");
     }
@@ -167,8 +167,8 @@ class HangmanGameTest {
     @DisplayName("Reset game creates new word and resets state")
     void testReset() {
         // Make some guesses
-        game.guessLetter('A');
-        game.guessLetter('E');
+        game.guesLetter('A');
+        game.guesLetter('E');
         
         game.reset();
         
@@ -180,7 +180,7 @@ class HangmanGameTest {
             "Game should not be over after reset");
         
         // Word might be same or different (random), but should be valid
-        String newWord = game.getWord();
+        String newWord = game.getWordToGuess();
         assertNotNull(newWord, "Word should not be null after reset");
         assertTrue(newWord.length() >= 12, 
             "Word should still be at least 12 characters after reset");
@@ -189,21 +189,21 @@ class HangmanGameTest {
     @Test
     @DisplayName("Display word shows underscores for unguessed letters")
     void testDisplayWord() {
-        String displayWord = game.getDisplayWord();
+        String displayWord = game.getCurrentWordState();
         
         assertNotNull(displayWord, "Display word should not be null");
         assertTrue(displayWord.contains("_"), 
             "Display word should contain underscores for unguessed letters");
         
         // After guessing all letters, should have no underscores
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         for (char c : word.toCharArray()) {
             if (!game.isLetterGuessed(c)) {
-                game.guessLetter(c);
+                game.guesLetter(c);
             }
         }
         
-        String finalDisplay = game.getDisplayWord();
+        String finalDisplay = game.getCurrentWordState();
         assertFalse(finalDisplay.contains("_"), 
             "Display word should not contain underscores when all letters guessed");
     }
@@ -214,9 +214,9 @@ class HangmanGameTest {
         assertTrue(game.getGuessedLetters().size() >= 1, 
             "Should have at least the hint letter guessed");
         
-        game.guessLetter('A');
-        game.guessLetter('E');
-        game.guessLetter('I');
+        game.guesLetter('A');
+        game.guesLetter('E');
+        game.guesLetter('I');
         
         assertTrue(game.getGuessedLetters().contains('A'), 
             "Guessed letters should contain A");
@@ -229,7 +229,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Case insensitive letter guessing")
     void testCaseInsensitive() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         char letter = '_';
         
         // Find an unguessed letter
@@ -243,7 +243,7 @@ class HangmanGameTest {
         if (letter != '_') {
             // Guess with lowercase
             char lowercase = Character.toLowerCase(letter);
-            game.guessLetter(lowercase);
+            game.guesLetter(lowercase);
             
             assertTrue(game.isLetterGuessed(letter), 
                 "Uppercase version should be marked as guessed");
@@ -255,7 +255,7 @@ class HangmanGameTest {
     @Test
     @DisplayName("Word is always uppercase")
     void testWordIsUppercase() {
-        String word = game.getWord();
+        String word = game.getWordToGuess();
         assertEquals(word, word.toUpperCase(), 
             "Word should be in uppercase");
     }
