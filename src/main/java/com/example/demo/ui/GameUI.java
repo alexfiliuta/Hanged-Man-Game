@@ -1,6 +1,10 @@
 package com.example.demo.ui;
 
-import com.example.demo.model.HangmanGame;
+import com.example.demo.model.HangmanGameModel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -20,63 +24,59 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-public class HangmanUI {
-    private HangmanGame game;
-    private Stage stage;
-    private Label wordLabel;
+public class GameUI {
+    private HangmanGameModel game;
+    private Stage primaryStage;
+    private Label wordDisplayLabel;
     private Label statusLabel;
-    private Label remainingGuessesLabel;
+    private Label remaininingGuessesLabel;
     private Canvas canvas;
     private GridPane letterButtons;
-    private Button resetButton;
+    private Button restartButton;
     private Pane confettiPane;
     private List<ConfettiParticle> confettiParticles;
     
-    public HangmanUI(Stage stage) {
-        this.stage = stage;
-        this.game = new HangmanGame();
+    public GameUI(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        this.game = new HangmanGameModel();
         this.confettiParticles = new ArrayList<>();
         setupUI();
     }
-    
+
     private void setupUI() {
         StackPane root = new StackPane();
-        BorderPane mainPane = new BorderPane();
-        mainPane.setPadding(new Insets(40));
-        
-        // Modern gradient background
-        String gradientStyle = "-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);";
-        mainPane.setStyle(gradientStyle);
-        
-        // Top: Title and status with modern styling
-        VBox topBox = new VBox(15);
+        BorderPane mainLayout = new BorderPane();
+        mainLayout.setPadding(new Insets(40));
+
+        //Modern Background
+        String gradientStyle = "-fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);";
+        mainLayout.setStyle(gradientStyle);
+
+        //Top: Title and status with modern font
+        VBox topBox = new VBox(10);
         topBox.setAlignment(Pos.CENTER);
-        topBox.setPadding(new Insets(0, 0, 30, 0));
-        
+        topBox.setPadding(new Insets(0,0,30, 0));
+
         Label titleLabel = new Label("🎮 HANGMAN");
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 48));
         titleLabel.setTextFill(Color.WHITE);
         DropShadow titleShadow = new DropShadow();
-        titleShadow.setColor(Color.rgb(0, 0, 0, 0.5));
         titleShadow.setRadius(10);
         titleShadow.setOffsetX(0);
         titleShadow.setOffsetY(4);
+        titleShadow.setColor(Color.color(0, 0, 0, 0.5));
         titleLabel.setEffect(titleShadow);
-        
+
         statusLabel = new Label("Guess the word!");
         statusLabel.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 20));
         statusLabel.setTextFill(Color.WHITE);
         statusLabel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); -fx-padding: 10 20; -fx-background-radius: 25;");
         
-        remainingGuessesLabel = new Label("❤".repeat(6));
-        remainingGuessesLabel.setFont(Font.font("Segoe UI", 24));
+        remaininingGuessesLabel = new Label("❤".repeat(6));
+        remaininingGuessesLabel.setFont(Font.font("Segoe UI", 24));
         
-        topBox.getChildren().addAll(titleLabel, statusLabel, remainingGuessesLabel);
-        mainPane.setTop(topBox);
+        topBox.getChildren().addAll(titleLabel, statusLabel, remaininingGuessesLabel);
+        mainLayout.setTop(topBox);
         
         // Center: Modern card-style container for canvas and word
         VBox centerBox = new VBox(25);
@@ -98,19 +98,19 @@ public class HangmanUI {
         canvasContainer.getChildren().add(canvas);
         
         // Word display with modern styling
-        wordLabel = new Label(game.getDisplayWord());
-        wordLabel.setFont(Font.font("Courier New", FontWeight.BOLD, 32));
-        wordLabel.setTextFill(Color.rgb(70, 70, 90));
-        wordLabel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); " +
+        wordDisplayLabel = new Label(game.getCurrentWordState());
+        wordDisplayLabel.setFont(Font.font("Courier New", FontWeight.BOLD, 32));
+        wordDisplayLabel.setTextFill(Color.rgb(70, 70, 90));
+        wordDisplayLabel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); " +
                           "-fx-padding: 20 40; " +
                           "-fx-background-radius: 15; " +
                           "-fx-border-color: rgba(102, 126, 234, 0.3); " +
                           "-fx-border-width: 2; " +
                           "-fx-border-radius: 15;");
-        wordLabel.setEffect(cardShadow);
+        wordDisplayLabel.setEffect(cardShadow);
         
-        centerBox.getChildren().addAll(canvasContainer, wordLabel);
-        mainPane.setCenter(centerBox);
+        centerBox.getChildren().addAll(canvasContainer, wordDisplayLabel);
+        mainLayout.setCenter(centerBox);
         
         // Bottom: Modern letter buttons and reset button
         VBox bottomBox = new VBox(30);
@@ -119,16 +119,16 @@ public class HangmanUI {
         
         letterButtons = createLetterButtons();
         
-        resetButton = new Button("🔄 NEW GAME");
-        resetButton.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-        resetButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f093fb 0%, #f5576c 100%); " +
+        restartButton = new Button("🔄 NEW GAME");
+        restartButton.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+        restartButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f093fb 0%, #f5576c 100%); " +
                             "-fx-text-fill: white; " +
                             "-fx-padding: 15 40; " +
                             "-fx-background-radius: 30; " +
                             "-fx-cursor: hand;");
-        resetButton.setEffect(cardShadow);
-        resetButton.setOnMouseEntered(e -> {
-            resetButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f5576c 0%, #f093fb 100%); " +
+        restartButton.setEffect(cardShadow);
+        restartButton.setOnMouseEntered(e -> {
+            restartButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f5576c 0%, #f093fb 100%); " +
                                 "-fx-text-fill: white; " +
                                 "-fx-padding: 15 40; " +
                                 "-fx-background-radius: 30; " +
@@ -136,28 +136,28 @@ public class HangmanUI {
                                 "-fx-scale-x: 1.1; " +
                                 "-fx-scale-y: 1.1;");
         });
-        resetButton.setOnMouseExited(e -> {
-            resetButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f093fb 0%, #f5576c 100%); " +
+        restartButton.setOnMouseExited(e -> {
+            restartButton.setStyle("-fx-background-color: linear-gradient(to bottom, #f093fb 0%, #f5576c 100%); " +
                                 "-fx-text-fill: white; " +
                                 "-fx-padding: 15 40; " +
                                 "-fx-background-radius: 30; " +
                                 "-fx-cursor: hand;");
         });
-        resetButton.setOnAction(e -> resetGame());
+        restartButton.setOnAction(e -> resetGame());
         
-        bottomBox.getChildren().addAll(letterButtons, resetButton);
-        mainPane.setBottom(bottomBox);
+        bottomBox.getChildren().addAll(letterButtons, restartButton);
+        mainLayout.setBottom(bottomBox);
         
         // Confetti pane overlay
         confettiPane = new Pane();
         confettiPane.setMouseTransparent(true);
         
-        root.getChildren().addAll(mainPane, confettiPane);
+        root.getChildren().addAll(mainLayout, confettiPane);
         
         Scene scene = new Scene(root, 1000, 950);
-        stage.setScene(scene);
-        stage.setTitle("🎮 Hangman Game");
-        stage.setResizable(false);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("🎮 Hangman Game");
+        primaryStage.setResizable(false);
         
         drawHangman();
         updateRemainingGuesses();
@@ -233,7 +233,7 @@ public class HangmanUI {
     }
     
     private void handleLetterClick(Button btn, char letter) {
-        boolean correct = game.guessLetter(letter);
+        boolean correct = game.guesLetter(letter);
         
         btn.setDisable(true);
         if (correct) {
@@ -258,7 +258,7 @@ public class HangmanUI {
                                "-fx-text-fill: white;");
         }
         
-        wordLabel.setText(game.getDisplayWord());
+        wordDisplayLabel.setText(game.getCurrentWordState());
         drawHangman();
         updateRemainingGuesses();
         
@@ -273,13 +273,13 @@ public class HangmanUI {
             disableAllLetters();
             launchConfetti();
         } else if (game.isGameLost()) {
-            statusLabel.setText("💀 Game Over! The word was: " + game.getWord());
+            statusLabel.setText("💀 Game Over! The word was: " + game.getWordToGuess());
             statusLabel.setStyle("-fx-background-color: rgba(235, 51, 73, 0.5); " +
                                "-fx-padding: 15 30; " +
                                "-fx-background-radius: 25; " +
                                "-fx-text-fill: white; " +
                                "-fx-font-size: 18px;");
-            wordLabel.setText(game.getWord());
+            wordDisplayLabel.setText(game.getWordToGuess());
             disableAllLetters();
         }
     }
@@ -294,7 +294,7 @@ public class HangmanUI {
     
     private void resetGame() {
         game.reset();
-        wordLabel.setText(game.getDisplayWord());
+        wordDisplayLabel.setText(game.getCurrentWordState());
         statusLabel.setText("Guess the word!");
         statusLabel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); " +
                            "-fx-padding: 10 20; " +
@@ -306,7 +306,7 @@ public class HangmanUI {
         confettiParticles.clear();
         
         // Re-create letter buttons
-        StackPane root = (StackPane) stage.getScene().getRoot();
+        StackPane root = (StackPane) primaryStage.getScene().getRoot();
         BorderPane mainPane = (BorderPane) root.getChildren().get(0);
         VBox bottomBox = (VBox) mainPane.getBottom();
         bottomBox.getChildren().remove(letterButtons);
@@ -319,7 +319,7 @@ public class HangmanUI {
     
     private void updateRemainingGuesses() {
         int remaining = game.getRemainingGuesses();
-        remainingGuessesLabel.setText("❤".repeat(remaining) + "🖤".repeat(6 - remaining));
+        remaininingGuessesLabel.setText("❤".repeat(remaining) + "🖤".repeat(6 - remaining));
     }
     
     private void drawHangman() {
@@ -500,6 +500,6 @@ public class HangmanUI {
     }
     
     public void show() {
-        stage.show();
+        primaryStage.show();
     }
 }
