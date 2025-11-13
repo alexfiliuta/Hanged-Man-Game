@@ -1,25 +1,38 @@
 package com.example.demo;
 
-import java.util.Scanner;
-
-import org.springframework.boot.CommandLineRunner;
+import com.example.demo.ui.HangmanUI;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-public class DemoApplication implements CommandLineRunner{
+public class DemoApplication extends Application {
+
+	private static ConfigurableApplicationContext springContext;
+	private static String[] savedArgs;
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
-		System.err.println("Application Started Successfully");
-		Scanner sc = new Scanner(System.in);
-		System.out.println(sc.nextLine());
-		sc.close();
-
+		savedArgs = args;
+		Application.launch(DemoApplication.class, args);
 	}
 
 	@Override
-	public void run(String... args) throws Exception {
-		// add startup logic here if needed
+	public void init() {
+		springContext = SpringApplication.run(DemoApplication.class, savedArgs);
+	}
+
+	@Override
+	public void start(Stage primaryStage) {
+		HangmanUI hangmanUI = new HangmanUI(primaryStage);
+		hangmanUI.show();
+	}
+
+	@Override
+	public void stop() {
+		springContext.close();
+		Platform.exit();
 	}
 }
